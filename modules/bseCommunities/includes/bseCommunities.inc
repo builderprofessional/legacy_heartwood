@@ -1,0 +1,965 @@
+<?php
+
+global $fpTbl, 
+       $commDetTbl, 
+       $commTbl,
+       $mapTbl;
+
+
+$fpTbl = "bseCommFloorplans";
+$commDetTbl = "bseCommDetail";
+$commTbl = "bseCommunities";
+$mapTbl = "bseCommMaps";
+
+
+
+
+
+
+class bseCommunityFloorPlan extends bseModule
+{
+
+    private $imageDir,
+            $resizeH,
+            $resizeW,
+            $img;
+
+    public  $texts,
+            $imgs;
+
+
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot, "modules/bseCommunities/");
+            $this->setTableName($GLOBALS['fpTbl']);
+
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+            
+            $this->texts = $this->imgs = null;
+            $this->img = new bseImageManipulator();
+        }
+        
+        
+        
+        public function setPlanId($id)
+        {
+            $planid = $this->getEscapedString($id);
+            
+            $data = $this->getQueryData("SELECT * FROM `{$this->table}` WHERE `id` = '$planid'");
+            $this->setDataFromArray($data);
+        }
+        
+        
+        
+        
+
+
+        public function hasPDF()
+        {
+            return ( trim($this->pdf) != "" && file_exists($this->getDocHref()) );
+        }
+
+
+
+        public function getDocHref()
+        {
+            return $this->rootPath.$this->storeDir.$this->imageDir.$this->pdf;
+        }
+
+
+
+        public function hasImage()
+        {
+             return ( trim($this->photo) != "" && file_exists($this->getImageHref()) );
+        }
+
+
+
+        public function getImageHref()
+        {
+            return $this->rootPath.$this->storeDir.$this->imageDir.$this->photo;
+        }
+
+
+
+        public function getResizedImageHref($height=null, $width=null, $file=null)
+        {
+            $img = ($file == null ? $this->photo : $file);
+            $ret = $this->img->getResizedImage($this->rootPath.$this->storeDir.$this->imageDir, "_thumbs", $img, $this->id, $height, $width );
+            $this->resizeH = $this->img->resizeH;
+            $this->resizeW = $this->img->resizeW;
+            return $ret;
+        }
+
+
+
+
+        public function refreshImagesArray()
+        {
+            $this->imgs = null;
+        }
+
+
+        public function getDetailImagesArray()
+        {
+            if( !is_array($this->imgs) )
+            {
+                $query = $this->getQueryResult("SELECT * FROM `bseCommFloorplanImages` WHERE `planid`='{$this->id}' ORDER BY `sorder` ASC");
+                if( $query )
+                {
+                    $this->imgs = array();
+                    while( $data = mysql_fetch_object($query) )
+                        $this->imgs[$data->id] = $data;
+                }
+                else
+                    return null;
+            }
+            return $this->imgs;
+        }
+
+
+        public function addDetailImageToArray($imgId)
+        {
+            $id = $this->getEscapedString($imgId);
+            $query = $this->getQueryResult("SELECT * FROM `bseCommFloorplanImages` WHERE `id`='$id'");
+            if( $query )
+            {
+                $data = mysql_fetch_object($query);
+                $this->imgs[$data->id] = $data;
+            }
+        }
+
+
+        public function deleteDetailImageFromArray($imgID)
+        {
+            if( array_key_exists("$imgID", $this->imgs) )
+            {
+                unset($this->imgs[$imgID]);
+                $id = $this->getEscapedString($imgID);
+
+                if( !$this->getQueryResult("DELETE FROM `bseCommFloorplanImages` WHERE `id`='$id' LIMIT 1") )
+                    throw new Exception("bseCommunityFloorplan::deleteDetailImageFromArray (".__LINE__."): mysql_query failed. Mysql Error: ".mysql_error()."\n");
+             }
+        }
+
+
+
+
+
+
+        public function refreshTextsArray()
+        {
+            $this->texts = null;
+        }
+
+
+        public function getDetailTextArray()
+        {
+            if( !is_array($this->texts) )
+            {
+                $query = $this->getQueryResult("SELECT * FROM `bseCommFloorplanTexts` WHERE `planid`='{$this->id}' ORDER BY `sorder` ASC");
+                if( $query )
+                {
+                    $this->texts = array();
+                    while( $data = mysql_fetch_object($query) )
+                        $this->texts[$data->id] = $data;
+                }
+                else
+                    return null;
+            }
+            return $this->texts;
+        }
+
+
+        public function addDetailTextToArray($txtId)
+        {
+            $id = $this->getEscapedString($txtId);
+            $query = $this->getQueryResult("SELECT * FROM `bseCommFloorplanTexts` WHERE `id`='$id'");
+            if( $query )
+            {
+                $data = mysql_fetch_object($query);
+                $this->texts[$data->id] = $data;
+            }
+            else
+            {
+                throw new Exception("bseCommunityFloorplan::addDetailTextToArray (".__LINE__."): mysql_query failed. Mysql error: ".mysql_error()."\n");
+            }
+        }
+
+
+        public function deleteDetailTextFromArray($txtID)
+        {
+            if( array_key_exists("$txtID", $this->texts) )
+            {
+                unset($this->texts[$txtID]);
+                $id = $this->getEscapedString($txtID);
+
+                if( !$this->getQueryResult("DELETE FROM `bseCommFloorplanTexts` WHERE `id`='$id' LIMIT 1") )
+                    throw new Exception("bseCommunityFloorplan::deleteDetailTextFromArray (".__LINE__."): mysql_query failed. Mysql Error: ".mysql_error()."\n");
+             }
+        }
+
+}
+
+
+
+
+
+
+class bseFloorPlansCollection extends bseCollection
+{
+
+        private $rootPath,
+                $storeDir,
+                $imageDir;
+                
+        public function __construct($rootPath="./")
+        {
+            parent::__construct($this->rootPath);
+            $this->rootPath = $rootPath.(substr($rootPath, -1)=="/"?"":"/");
+            $this->storeDir = "modules/bseCommunities/";
+            $this->setTableName($GLOBALS['fpTbl']);
+
+
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+
+        }
+        
+        
+        
+        public function fillFromCommunityId($commid)
+        {
+            $cid = $this->getEscapedString($commid);
+            
+            $query = $this->getQueryResult("SELECT * FROM `{$GLOBALS['fpTbl']}` WHERE `comm_id` = '$cid'");
+            while( $data = mysql_fetch_assoc($query) )
+            {
+                $tmp = new bseCommunityFloorPlan($this->rootPath);
+                $tmp->setDataFromArray($data);
+                $this->add($tmp);
+            }
+        }
+        
+        
+        
+        public function resetRoot($pathToNewRoot)
+        {
+            $this->rootPath = $pathToNewRoot . ( substr($pathToNewRoot, -1) == "/" ? "" : "/" );
+            
+            foreach($this as $plan)
+                $plan->resetRoot($this->rootPath);
+        }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class bseCommunityDetails extends bseModule
+{
+
+    private $imageDir;
+
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot, "modules/bseCommunities/");
+            $this->setTableName($GLOBALS['commDetTbl']);
+
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+        }
+        
+        
+        
+        
+        public function setDetailId($id)
+        {
+            $detailid = $this->getEscapedString($id);
+            
+            $data = $this->getQueryData("SELECT * FROM `bseCommDetail` WHERE `id` = '$detailid'");
+            $this->setDataFromArray($data);
+        }
+
+
+        public function hasPDF()
+        {
+            return ( trim($this->pdfFile) != "" && file_exists($this->getDocHref()) );
+        }
+
+
+
+        public function getDocHref()
+        {
+            return $this->rootPath.$this->storeDir.$this->imageDir.$this->pdfFile;
+        }
+
+
+
+        public function hasPic()
+        {
+             return ( trim($this->imageFile) != "" && file_exists($this->getImageHref()) );
+        }
+
+
+
+        public function getImageHref()
+        {
+            return $this->rootPath.$this->storeDir.$this->imageDir.$this->imageFile;
+        }
+
+
+
+}
+
+
+
+
+class bseCommunity extends bseModule
+{
+
+    private $imageDir;
+
+    private $cpanels = array(1=>"home",2=>"plat",3=>"floorplan",4=>"pricelist",5=>"specs",6=>"directions");
+
+     public $details = array();
+     public $floorPlans;
+
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot, "modules/bseCommunities/");
+            $this->setTableName($GLOBALS['commTbl']);
+
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+
+        }
+
+
+
+
+        public function setCommunityId($id)
+        {
+            $comid = $this->getEscapedString($id);
+        
+            $this->details = array();
+            
+            $data = $this->getQueryData("SELECT * FROM `{$this->table}` WHERE `id` = '$comid'");
+            $this->setDataFromArray($data);
+        }
+
+
+
+        public function setDataFromArray($dataArray)
+        {
+
+            parent::setDataFromArray($dataArray);
+            
+            
+            $query = $this->getQueryResult("SELECT * FROM `{$GLOBALS['commDetTbl']}` WHERE `comm_id` = '{$this->id}'");
+            while( $data = mysql_fetch_array($query) )
+            {
+                $tmp = new bseCommunityDetails($this->rootPath);
+                $tmp->setDataFromArray($data);
+                $this->details[$this->cpanels[$data['cpanel']]] =& $tmp;
+            }
+
+            $this->floorPlans = new bseFloorPlansCollection($this->rootPath);
+            $this->floorPlans->fillFromCommunityId($this->id);
+        }
+
+
+        public function setPoint($newPoint)
+        {
+            $pnt = str_replace("(", "", str_replace(")", "", $newPoint));
+            $this->point = $pnt;
+        }
+
+
+        public function getResourcePath()
+        {
+            return $this->rootPath.$this->storeDir.$this->imageDir;
+        }
+
+
+        public function getDetailsSubmitHref()
+        {
+            return $this->rootPath.$this->storeDir."processDetails.php";
+        }
+        
+        
+        
+        public function getPlanDetailSubmitHref()
+        {
+            return $this->rootPath.$this->storeDir."processDetails.php";
+        }
+
+
+
+        public function getPanelImageSubmitHref()
+        {
+            return $this->rootPath.$this->storeDir."processDetails.php";
+        }
+
+
+
+
+
+
+
+        public function getDetailsTemplateHref($detailPanel)
+        {
+            $ret = "";
+            switch( $detailPanel )
+            {
+                case 1:
+                    $ret .= "detailsHome.tpl";
+                    break;
+
+                case 2:
+                    $ret .= "detailsPlatMap.tpl";
+                    break;
+
+                case 3:
+                    $ret .= "detailsFloorPlan.tpl";
+                    break;
+
+                case 4:
+                    $ret .= "detailsPriceList.tpl";
+                    break;
+
+                case 5:
+                    $ret .= "detailsHomeSpecs.tpl";
+                    break;
+
+                case 6:
+                    $ret .= "detailsDirections.tpl";
+                    break;
+
+                default:
+                    $ret .= "detailsHome.tpl";
+                    break;
+            }
+            return $ret;
+        }
+
+}
+
+
+
+
+
+class bseCommunitiesCollection extends bseCollection
+{
+
+    private $rootPath,
+            $storeDir,
+            $imageDir,
+            $mapid;
+
+
+        public function __construct($rootPath="./")
+        {
+            parent::__construct($rootPath);
+            $this->rootPath = $rootPath.(substr($rootPath, -1)=="/"?"":"/");
+            $this->storeDir = "modules/bseCommunities/";
+
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+
+        }
+        
+        
+        
+        
+        public function setCommunitiesList($mapid)
+        {
+            $this->ary = array();
+
+            $this->mapid = $this->getEscapedString($mapid);
+            
+            $query = $this->getQueryResult("SELECT * FROM `{$GLOBALS['commTbl']}` WHERE `map_id`='{$this->mapid}'");
+            while( $data = mysql_fetch_assoc($query) )
+            {
+                $tmp = new bseCommunity($this->rootPath);
+                $tmp->setDataFromArray($data);
+                $this->add( $tmp );
+            }
+        }
+        
+        
+        
+        
+        
+        public function setAllCommunitiesList()
+        {
+            foreach( $this as $com )
+                $this->remove($com->id);
+
+            $this->mapid = -1;
+            $query = $this->getQueryResult("SELECT * FROM `{$GLOBALS['commTbl']}`");
+            while( $data = mysql_fetch_assoc($query) )
+            {
+                $tmp = new bseCommunity($this->rootPath);
+                $tmp->setDataFromArray($data);
+                $this->add( $tmp );
+            }
+        }
+
+
+
+
+
+
+        public function resetRoot($newPathToRootDir)
+        {
+//            parent::resetRoot($newPathToRootDir);
+            $this->rootPath = $newPathToRootDir.(substr($newPathToRootDir, -1)=="/"?"":"/");
+            foreach( $this->ary as $item )
+            {
+                if( is_object($item) )
+                    $item->resetRoot($this->rootPath);
+            }
+        }
+
+
+}
+
+
+
+
+
+
+
+class bseGoogleMap extends bseModule
+{
+
+     public $SiteKey,
+            $onLoad,
+            $onUnload,
+            $resetCode,
+            $useDirections,
+            $searchOverlay,
+            $markersOverlay,
+            $useGeoCoder,
+            $communities,
+            $mapCenter;
+
+
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot, "modules/bseCommunities/");
+            $this->setTableName($GLOBALS['mapTbl']);
+
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->SiteKey = $config_GoogleMapKey;
+
+
+            $this->onLoad = 'load();';
+            $this->onUnload = 'GUnload();'; 
+            $this->useDirections = $this->searchOverlay = $this->markersOverlay = $this->hideMapSelect = false;
+
+            $this->communities = new bseCommunitiesCollection($this->rootPath);
+        }
+
+
+
+        public function resetRoot($newPathToRootDir)
+        {
+            parent::resetRoot($newPathToRootDir);
+            $this->communities->resetRoot($this->rootPath);
+        }
+        
+        
+        
+        
+        public function setMapId($mapid)
+        {
+            $map_id = $this->getEscapedString($mapid);
+            $data = $this->getQueryData("SELECT * FROM `{$GLOBALS['mapTbl']}` WHERE `id`='$map_id'");
+            $this->setDataFromArray($data);
+            $this->resetCode = "map.closeInfoWindow();map.setCenter(new GLatLng({$this->mapCenter}),{$this->zoom});";
+        }
+        
+        
+        
+        
+        
+        public function setNewMapId($mapid)
+        {
+            $this->communities = new bseCommunitiesCollection($this->rootPath);
+            $this->setMapId($mapid);
+            $this->resetMapCodes();
+        }
+
+
+
+
+        public function setDataFromArray($dataArray)
+        {
+            parent::setDataFromArray($dataArray);
+            
+            $this->mapCenter = $this->point;
+            $this->communities->setCommunitiesList($this->id);
+        }
+
+
+
+
+
+        public function getGoogleMapJsTemplateHref()
+        {
+            return "googleMapJs.tpl";
+        }
+
+
+        public function getGoogleMapTemplateHref()
+        {
+            return "googleMap.tpl";
+        }
+      
+      
+        public function getToolTipScriptTag()
+        {
+            // Outputs the correct script tag for the custom tooltips
+            // ** Must be called AFTER setting the body tag **
+            echo "<script src=\"{$this->rootPath}modules/includes/js/wz_tooltip.js\" type=\"text/javascript\"></script>";
+        }
+      
+
+        public function getBodyLoadUnloadTags ()
+        {
+            // *This must be inserted into the body tag of any page with a Google map!*
+            return "onload=\"{$this->onLoad}\" onunload=\"{$this->onUnload}\"";
+        }
+
+
+        public function getMapDisplayTemplateHref()
+        {
+             return "commMap.tpl";
+        }
+
+
+
+        public function getCommunitiesListTemplateHref()
+        {
+             return "communityList.tpl";
+        }
+
+
+        public function getMoveIconSubmitHref()
+        {
+             return $this->rootPath.$this->storeDir."processMap.php";
+        }
+
+
+        public function getFormSubmitHref()
+        {
+             return $this->rootPath.$this->storeDir."processMap.php";
+        }
+
+
+
+        public function getCommunityEditHref()
+        {
+            return $this->rootPath.$this->storeDir."editCommunity.php";
+        }
+
+
+
+        public function getNewMapSubmitHref()
+        {
+            return $this->rootPath.$this->storeDir."processMap.php";
+        }
+
+
+
+        public function getResourcePath()
+        {
+            return $this->rootPath.$this->storeDir.$this->imageDir;
+        }
+
+
+        
+        
+        public function getStyleSheetName()
+        {
+        	return "bseCommunities.css";
+        }
+        
+        
+
+        public function &createCommunity()
+        {
+            if( $this->getQueryResult("INSERT INTO `{$GLOBALS['commTbl']}` SET `map_id`='{$this->id}'") )
+            {
+                $data = $this->getQueryData("SELECT * FROM `{$GLOBALS['commTbl']}` WHERE `id`='{$this->getInsertId()}'");
+                $tmp = new bseCommunity($this->rootPath);
+                $tmp->setDataFromArray($data);
+                $this->communities->add($tmp);
+                return $tmp;
+            }
+
+            return null;
+        }
+
+
+
+
+        public function addToResetCode($code)
+        {
+            if( strpos($this->resetCode, $code) === false )
+                $this->resetCode .= $code.(substr($code, -1)==";"?"":";");
+        }
+        
+        public function removeFromResetCode($code)
+        {
+            $code .= ( substr($code, -1) == ";" ? "" : ";" );
+            while( strpos($this->resetCode, $code) !== false )
+                $this->resetCode = str_replace($code, "", $this->resetCode);
+        }
+        
+        
+        
+
+
+        public function addToLoadCode($code)
+        {
+            if( strpos($this->onLoad, $code) === false )
+                $this->onLoad .= $code.(substr($code, -1)==";"?"":";");
+        }
+        
+        public function removeFromLoadCode($code)
+        {
+            $code .= ( substr($code, -1) == ";" ? "" : ";" );
+            while( strpos($this->onLoad, $code) !== false )
+                $this->onLoad = str_replace($code, "", $this->onLoad);
+        }
+
+
+
+
+
+        public function addToUnloadCode($code)
+        {
+            if( strpos($this->onUnload, $code) === false )
+                $this->onUnload .= $code.(substr($code, -1)==";"?"":";");
+        }
+        
+        public function removeFromUnloadCode($code)
+        {
+            $code .= ( substr($code, -1) == ";" ? "" : ";" );
+            while( strpos($this->onUnload, $code) !== false )
+                $this->onUnload = str_replace($code, "", $this->onUnload);
+        }
+
+
+
+
+        public function resetMapCodes()
+        {
+            $this->onLoad = 'load();';
+            $this->onUnload = 'GUnload();'; 
+            $this->resetCode = "map.closeInfoWindow();map.setCenter(new GLatLng(".$this->mapCenter."),".$this->zoom.");";
+            $this->useDirections = $this->searchOverlay = $this->markersOverlay = $this->hideMapSelect = false;
+        }
+
+}
+
+
+
+
+
+class bseMapsCollection extends bseCollection
+{
+
+    private $rootPath,
+            $storeDir;
+
+
+        public function __construct($rootPath="./")
+        {
+            parent::__construct($rootPath);
+            $this->rootPath = $rootPath.(substr($rootPath, -1)=="/"?"":"/");
+            $this->storeDir = "modules/bseCommunities/";
+
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+            
+            $this->setTableName($GLOBALS['mapTbl']);
+
+        }
+        
+        
+        
+        
+        public function setMapsList($showHiddenMap = false)
+        {
+            $where = " WHERE `id` > 0";
+
+            if( $showHiddenMap )
+                $where = "";
+
+            $query = $this->getQueryResult("SELECT * FROM `{$GLOBALS['mapTbl']}`$where");
+            while( $data = mysql_fetch_assoc($query) )
+            {
+                $tmp = new bseGoogleMap($this->rootPath);
+                $tmp->setDataFromArray($data);
+                $this->add( $tmp );
+            }
+        }
+
+
+
+
+
+
+        public function resetRoot($newPathToRootDir)
+        {
+            $this->rootPath = $newPathToRootDir.(substr($newPathToRootDir, -1)=="/"?"":"/");
+            foreach( $this->ary as $item )
+                $item->resetRoot($this->rootPath);
+        }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// Functions used for the bseCommunities section
+
+
+    function getLocationFromIp($ip)
+    {
+        $curl = curl_init("http://api.ipinfodb.com/v3/ip-city/?key=dcd9eda3f643dc39e7c395c924babec0a1c208b54a5b9bb46f923973032e5be7&ip=$ip&format=xml");
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $xml = curl_exec($curl);
+        curl_close($curl);
+
+        $xml = simplexml_load_string($xml);
+        $ret = array();
+        $ret['lat'] = (string)$xml->latitude;
+        $ret['lon'] = (string)$xml->longitude;
+
+        return $ret;
+    }
+
+
+    function getClosestMap($locAry, $bseCon)
+    {
+//        echo "IP Location = '{$locAry['lat']},{$locAry['lon']}'<br />";
+        $query = $bseCon->getQueryResult("SELECT * FROM `bseCommMaps` WHERE `id` > 0");
+        $closestID = null;
+        $minLat = $minLon = $mlf = -1;
+
+        while( $data = mysql_fetch_array($query) )
+        {
+//            echo "Map Point = '{$data['point']}'<br />";
+            $mapLoc = explode(",", $data['point']);
+            $lat = (float)$mapLoc[0];
+            $lon = (float)$mapLoc[1];
+
+            if( $minLat == -1 && $minLon == -1 )
+            {
+                $minLat = abs($locAry['lat'] - $lat);
+                $minLon = abs($locAry['lon'] - $lon);
+                $mlf = ($minLat < $minLon ? $minLat : $minLon);
+                $closestID = $data['id'];
+                continue;
+            }
+            else
+            {
+                if( $mlf == $minLat )
+                {    // If we're closer than the most limiting factor (mlf), then make sure the other value hasn't become the mlf
+                    if( abs($locAry['lat'] - $lat) < $mlf )  // Is the latitude of the map closer to our user than the mlf?
+                    {
+                        if( abs($locAry['lon'] - $lon) < $mlf )  // Is the longitude of the map closer than the mlf? If so, this map is closer to the user
+                        {
+                            $minLat = abs($locAry['lat'] - $lat);
+                            $minLon = abs($locAry['lon'] - $lon);
+                            $mlf = ($minLat < $minLon ? $minLat : $minLon);
+                            $closestID = $data['id'];
+//                            echo "Set Closest ID = '{$data['id']}'<br />";
+                        }
+                        else if( abs($locAry['lon'] - $lon) < $minLon )      // Latitude is closer but longitude is farther, check if longitude is closer than minLon
+                        {    // Latitude is closer AND longitude is closer. This map is closer to the user
+                            $minLat = abs($locAry['lat'] - $lat);
+                            $minLon = abs($locAry['lon'] - $lon);
+                            $mlf = ($minLat < $minLon ? $minLat : $minLon);
+                            $closestID = $data['id'];
+//                            echo "Set Closest ID = '{$data['id']}'<br />";
+                        }                            
+                    }
+                }
+                else   // longitude is the mlf, check the map's longitude values
+                {
+                    if( abs($locAry['lon'] - $lon) < $mlf )
+                    {
+                        if( abs($locAry['lat'] - $lat) < $mlf )  // Is the latitude of the map closer than the mlf? If so, this map is closer to the user
+                        {
+                            $minLat = abs($locAry['lat'] - $lat);
+                            $minLon = abs($locAry['lon'] - $lon);
+                            $mlf = ($minLat < $minLon ? $minLat : $minLon);
+                            $closestID = $data['id'];
+//                            echo "Set Closest ID = '{$data['id']}'<br />";
+                        }
+                        else if( abs($locAry['lat'] - $lat) < $minLon )      // Longitude is closer but latitude is farther, check if latitude is closer than minLat
+                        {    // Latitude is closer AND longitude is closer. This map is closer to the user
+                            $minLat = abs($locAry['lat'] - $lat);
+                            $minLon = abs($locAry['lon'] - $lon);
+                            $mlf = ($minLat < $minLon ? $minLat : $minLon);
+                            $closestID = $data['id'];
+//                            echo "Set Closest ID = '{$data['id']}'<br />";
+                        }                            
+                    }
+                }
+            }
+        }
+
+        return $closestID;
+    }
+
+
+    function getCommModuleDirectory()
+    {
+        include("includes/config.inc");
+        $dir = basename(dirname(__FILE__));
+        $dir .= (substr($dir, -1)=="/"?"":"/");
+        $modImageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+        return $dir.$modImageDir;
+    }
+
+
+
+    function getDefaultMetaData($db, $panel, $pathToDocRoot="./")
+    {
+        $root = $pathToDocRoot . (substr($pathToDocRoot, -1)=="/"?"":"/");
+        
+        $panel = $db->getEscapedString($panel);
+        $data = $db->getQueryData("SELECT * FROM `bseCommunityDetailDefaultMetaData` WHERE `panel`='$panel'");
+        return $data;
+    }
+
+
+
+?>

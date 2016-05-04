@@ -1,0 +1,5 @@
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^precisionstylehomes\.com
+RewriteRule ^(.*)$ http://www.precisionstylehomes\.com/$1 [R=301,L]
+RewriteCond %{THE_REQUEST} ^GET\ .*/index\.(php|html)\ HTTP
+RewriteRule ^(.*)index\.(php|html)$ /$1 [R=301,L]

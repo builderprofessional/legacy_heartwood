@@ -1,0 +1,437 @@
+<?php
+
+global $productsTable, $productFeaturesTable;
+
+$productsTable = "bseProducts";
+$productFeaturesTable = "bseProductFeatures";
+//$homesPageTable = "bseHomesPage";
+
+
+
+class bseProduct extends bseModule
+{
+
+        public  $resizeW,
+                $resizeH,
+                $features;
+
+        private $img,
+                $imageDir;
+         
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot, "modules/bseProducts/");
+            $this->setTableName($GLOBALS['productsTable']);
+
+            
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+
+
+            $this->img = new bseImageManipulator();
+            
+            $this->features = new bseProductFeatures($this->rootDir);
+
+        }
+        
+        
+        public function setItemId($id)
+        {
+            $itemid = $this->getEscapedString($id);
+            
+            $data = $this->getQueryData("SELECT * FROM `{$this->table}` WHERE `id` = '$itemid'");
+            $this->setDataFromArray($data);
+        }
+        
+        
+        
+        public function setDataFromArray($data)
+        {
+        	parent::setDataFromArray($data);
+        	$this->features->setProductId($this->id);
+        }
+        
+
+
+        public function getPrice($useDecimals)
+        {
+            if( is_null($useDecimals) )
+            	$useDecimals = false;
+            
+            $ret = str_replace('$', "", str_replace(",", "", $this->price));
+            
+           	if( strpos($ret, ".") !== false ) // Decimals exist in return string
+           	{
+           		if( $useDecimals == false )  // Ensure the decimals get returned by this function
+           		{
+           			$useDecimals = true;
+           		}
+           	}
+            
+            if( @trim($ret) != "" )
+                return number_format($ret, ( $useDecimals ? 2 : 0 ) );
+            else
+                return "";
+        }
+            
+
+
+
+        public function getResizedImage($h=150, $w=150)
+        {
+            $imgFile = "comingSoon.jpg";
+            if( @trim( $this->image_file ) != "" )
+                $imgFile = $this->image_file;
+                
+            $ret = $this->img->getResizedImage($this->rootPath.$this->storeDir.$this->imageDir, "_thumbs", $imgFile, $this->id, $h, $w );
+            $this->resizeH = $this->img->resizeH;
+            $this->resizeW = $this->img->resizeW;
+            return $ret;
+        }
+
+
+
+        public function getBriefDescription($length=150)
+        {
+            $ret = $this->description;
+
+            if( strlen($this->description) > $length )
+                 $ret = substr($this->description, 0, $length - 3) . "...";
+
+            return $ret;
+        }
+        
+        
+        
+        
+        public function getImageHref()
+        {
+            $path= $this->rootPath.$this->storeDir.$this->imageDir;
+            if( !file_exists($path.$this->image_file) || @trim( $this->image_file ) == "" )
+                return $path."comingSoon.jpg";
+            else
+                return $path.$this->image_file;
+        }
+        
+        
+                  
+        
+        
+        
+        public function hasGallery()
+        {
+            return $this->gallery_id > 0;
+        }
+        
+        
+        
+        public function getDetailGradientHref()
+        {
+            return $this->rootPath.$this->storeDir."iface/detailGradient.png";
+        }
+        
+        public function getDetailTabHref()
+        {
+            return $this->rootPath.$this->storeDir."iface/tab.png";
+        }
+
+        public function getDetailTabDownHref()
+        {
+            return $this->rootPath.$this->storeDir."iface/tab_down.png";
+        }
+
+}
+
+
+
+
+
+
+
+/*********************************************************************************
+Products Collection
+*********************************************************************************/
+class bseProducts extends bseCollection
+{
+        protected $rootPath,
+                  $storeDir;
+
+
+
+
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot);
+//            $this->setTableName($GLOBALS['homesPageTable']);
+            $this->rootPath = $pathToDocRoot.(substr($pathToDocRoot, -1)=="/"?"":"/");
+            $this->storeDir = "modules/bseProducts/";
+        }
+        
+        public function resetRoot($newRoot)
+        {
+            $this->rootPath = $newRoot . ( substr($newRoot, -1) == "/" ? "" : "/" );
+            foreach($this->ary as $item)
+                if( is_object($item) ) { $item->resetRoot($this->rootPath); };
+        }
+        
+        
+
+        
+        
+        public function setPage($page)
+        {
+            if( trim($page) == "" || !isset($page) )
+            {
+                throw new Exception("bseProducts::setPage() - No Page specified for products collection on line ".__LINE__);
+                return false;
+            }
+            
+            $this->ary = array();
+            $ownerPage = $this->getEscapedString($page);
+            
+            $sql = "SELECT * FROM `{$this->table}` WHERE `page` = '$ownerPage'";
+            $data = $this->getQueryData($sql);
+            parent::setDataFromArray($data);
+            
+            
+            $res = $this->getQueryResult("SELECT * FROM `{$GLOBALS['productsTable']}` WHERE `page_id`='{$this->id}'");
+            while( $data = mysql_fetch_array($res) )
+            {
+                $tmpItem = new bseProduct($this->rootPath);
+                $tmpItem->setDataFromArray($data);
+                $this->add($tmpItem);
+                unset( $tmpItem );
+            }
+        }
+        
+        
+        
+        
+        public function setAllItems()
+        {
+            $this->ary = array();
+            $this->id = -1;
+            $sql = "SELECT * FROM `{$GLOBALS['productsTable']}`";
+            $query = $this->getQueryResult($sql);
+            
+            while( $data = mysql_fetch_assoc($query) )
+            {
+                $tmpItem = new bseProduct($this->rootPath);
+                $tmpItem->setDataFromArray($data);
+                $this->add($tmpItem);
+                unset($tmpItem);
+            }
+        }
+        
+        
+        
+        
+        public function &getFeaturedItemsCol()
+        {
+            $ret = new bseProducts($this->rootPath);
+            foreach( $this->ary as $tmp )
+            {
+                if( $tmp->featured )
+                    $ret->add($tmp);
+            }
+            
+            return $ret;
+        }
+
+
+
+
+       
+        public function &getFilteredSet($filter, $value)
+        {
+            $ret = new bseProducts($this->rootPath);
+            
+            foreach($this as $item)
+            {
+                if( $item->$filter == $value )
+                    $ret->add($item);
+            }
+            
+            return $ret;
+        }
+        
+
+
+        
+        
+      
+
+        public function sortByCommunity()
+        {
+            return $this->sortArray("community");
+        }
+
+        public function sortByPrice()
+        {
+            return $this->sortArray("price");
+        }
+
+        public function sortBySize()
+        {
+            return $this->sortArray("sqft");
+        }
+
+        public function getDisplayArray()
+        {
+            return $this->ary;
+        }
+
+
+
+        
+        
+        
+        
+        
+        public function getAdminTemplateHref()
+        {
+            return "productsAdmin.tpl";
+        }
+        
+        
+        
+        public function getAdminFormSubmitHref()
+        {
+            return $this->rootDir.$this->storeDir."process_product.php";
+        }
+
+        
+        
+        public function getProductsListTemplateHref()
+        {
+            return "productsList.tpl";
+        }
+
+        
+        
+        public function getStyleLinkCode()
+        {
+            return "<link rel=\"stylesheet\" type=\"text/css\" href=\"{$this->rootPath}modules/includes/css/bseProducts.css\" media=\"screen\" />";
+        }
+        
+        
+        
+        
+        public function insertNew()
+        {
+            $query = $this->getQueryResult("INSERT INTO `{$GLOBALS['productsTable']}` SET `id` = NULL");
+            if( $query )
+                return $this->getInsertId();
+            
+            else
+                return null;
+        }
+        
+        
+        
+        
+        private function removeAll()
+        {
+            foreach($this as $item)
+                $this->remove($item->id);
+        }
+
+}
+
+
+
+
+/*********************************************************************************
+Product Feature
+*********************************************************************************/
+class bseProductFeature extends bseModule
+{
+
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot, "modules/bseProducts/");
+            $this->setTableName($GLOBALS['productFeaturesTable']);
+
+        }
+        
+        
+        
+        public function isFeatured()
+        {
+        	if( $this->featured_int == 1 )
+        	{
+        		return true;
+        	}
+        	
+        	return false;
+        }
+
+}
+
+
+
+
+
+
+/*********************************************************************************
+Product Features Collection
+*********************************************************************************/
+class bseProductFeatures extends bseCollection
+{
+
+        protected $rootPath,
+                  $storeDir;
+
+
+
+
+        public function __construct($pathToDocRoot="./")
+        {
+            parent::__construct($pathToDocRoot);
+            $this->setTableName($GLOBALS['productFeaturesTable']);
+            $this->rootPath = $pathToDocRoot.(substr($pathToDocRoot, -1)=="/"?"":"/");
+            $this->storeDir = "modules/bseProducts/";
+        }
+        
+
+
+        public function setProductId($prodId)
+        {
+        	if( is_null($prodId) or $prodId == 0 )
+        	{
+        		throw new Exception("bseProductFeatures::setProductId(): No Product Id given or Id invalid in subclass of ". get_class($this) );
+        		return false;
+        	}
+        	
+        	$id = $this->getEscapedString($prodId);
+            $this->ary = array();
+            $this->id = -1;
+            $sql = "SELECT *, CAST(`featured` AS unsigned integer) AS 'featured_int' FROM `{$GLOBALS['productFeaturesTable']}` WHERE `prodid`='$id'";
+            $query = $this->getQueryResult($sql);
+            
+            while( $data = mysql_fetch_assoc($query) )
+            {
+                $tmpItem = new bseProductFeature($this->rootPath);
+                $tmpItem->setDataFromArray($data);
+                $this->add($tmpItem);
+                unset($tmpItem);
+            }
+        }
+        
+        
+        
+        
+        public function &getFeaturedItemsCol()
+        {
+            $ret = new bseProductFeatures($this->rootPath);
+            foreach( $this->ary as $tmp )
+            {
+                if( $tmp->featured_int == 1 )
+                    $ret->add($tmp);
+            }
+            
+            return $ret;
+        }
+
+        
+}

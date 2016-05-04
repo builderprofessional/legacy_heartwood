@@ -1,0 +1,305 @@
+<?php
+
+class bseSliderImage extends dbData
+{
+
+        public  $rootPath,
+                $storeDir,
+                $imageDir,
+                $resizeH,
+                $resizeW;
+
+        public function __construct($dbConnection, $dataArray, $pathToModuleRoot, $rootPath="./")
+        {
+            if( empty($dbConnection) )
+            {
+                throw new Exception("MySQL Connection Invalid");
+                return false;
+            }
+            parent::__construct($dbConnection, $dataArray['id'], "bseSlideImage");
+
+            if( !empty($dataArray) )
+            {
+                foreach( $dataArray as $key => $value )
+                {
+                    $this->set($key, $value);
+                }
+            }
+
+            $this->rootPath = $rootPath.(substr($rootPath, -1)=="/"?"":"/");
+            $this->storeDir = $pathToModuleRoot.(substr($pathToModuleRoot, -1)=="/"?"":"/");
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+        }
+
+
+
+        public function resetRoot($newPathToRootDir)
+        {
+            $this->rootPath = $newPathToRootDir.(substr($newPathToRootDir, -1)=="/"?"":"/");
+        }
+
+
+        public function getDeleteHref()
+        {
+            return $this->rootPath.$this->storeDir."saveScroller.php";
+        }
+
+
+
+        public function getImageHref()
+        {
+            $file = $this->rootPath.$this->storeDir.$this->imageDir.$this->image_file;
+            if( file_exists($file) )
+                return $file;
+
+            else
+                return "file=$file";
+        }
+
+
+
+        public function getResizedImage($h=150, $w=150)
+        {
+            $maxW = $w;
+            $maxH = $h;
+            $path = $this->rootPath.$this->storeDir.$this->imageDir;
+            $fullFile = $path.$this->image_file;
+
+            if(!file_exists($fullFile))
+            {
+                return "";
+            }
+
+            // Get new dimensions
+            list($width_orig, $height_orig) = getimagesize($fullFile);
+
+            $ratio_orig = $width_orig/$height_orig;
+
+
+            if( $maxH != -1 )
+                $nwidth=round($maxH*$ratio_orig);
+            else
+            {
+                $nwidth=$maxW;
+                $nheight = round($maxW/$ratio_orig);
+                $maxH = $nheight + 1;
+                $maxW = $nwidth + 1;
+            }
+
+            if( $maxW != -1 )
+                $nheight=round($maxW/$ratio_orig);
+            else
+            {
+                $nheight=$maxH;
+                $nwidth = round($maxH*$ratio_orig);
+                $maxH = $nheight + 1;
+                $maxW = $nwidth + 1;
+            }
+
+
+            if( $nwidth>=$maxW )
+            {
+                $width=$maxW;
+                $height=$nheight; 
+            }
+            else if( $nheight>$maxH )
+            {
+                $height=$maxH;
+                $width=$nwidth; 
+            }
+            else
+            {
+                $width = $this->resizeW = $nwidth;
+                $height= $this->resizeH = $nheight;
+            }
+
+            // Check for cached image
+            $outFile = $path.$this->id."_{$width}x{$height}.jpg";
+
+            if( !file_exists($outFile) )
+            {
+                // Resample
+                $image_p = imagecreatetruecolor($width, $height);
+                $image = imagecreatefromjpeg($fullFile);
+                imagecopyresampled($image_p, $image, 0, 0, 0, 0, $width, $height, $width_orig, $height_orig);
+
+                // Output
+                imagejpeg($image_p, $outFile, 100);
+                imagedestroy($image_p);
+                imagedestroy($image);
+            }
+            return $outFile;
+        }
+
+}
+
+
+
+
+
+
+class bseImageSlider extends dbData implements Iterator
+{
+        private $rootPath,
+                $storeDir,
+                $imageDir;
+
+      protected $dbCon,
+                $picsCount,
+                $ary;
+
+
+        public function __construct($dbConnection, $dataArray, $pathToModuleRoot, $rootPath="./")
+        {
+            $imageCount = 0;
+            $this->ary = array();
+            $this->dbCon = $dbConnection;
+            $this->rootPath = $rootPath.(substr($rootPath, -1)=="/"?"":"/");
+            $this->storeDir = $pathToModuleRoot.(substr($pathToModuleRoot, -1)=="/"?"":"/");
+
+            if( !empty($dbConnection) )
+            {
+                if( !empty($dataArray) )
+                {
+                    parent::__construct($dbConnection, $dataArray['id'], "bseImageSlider");
+                    foreach( $dataArray as $key => $value )
+                    {
+                        $this->set($key, $value);
+                    }
+                }
+
+                $res = mysql_query("SELECT * FROM `bseSlideImage` WHERE `slider_id`='{$this->id}'", $dbConnection);
+                $imageCount = mysql_num_rows($res);
+                $this->picsCount = $imageCount;
+                while( $data = mysql_fetch_array($res) )
+                {
+                    $this->add(new bseSliderImage($dbConnection, $data, $this->storeDir, $this->rootPath));
+                }
+            }
+            else
+            {
+                throw new Exception("MySQL Connection Invalid");
+                return false;
+            }
+            
+            include("{$this->rootPath}{$this->storeDir}includes/config.inc");
+
+            $this->imageDir = $imageDir.(substr($imageDir, -1)=="/"?"":"/");
+        }
+
+
+
+        public function resetRoot($newPathToRootDir)
+        {
+            $this->rootPath = $newPathToRootDir.(substr($newPathToRootDir, -1)=="/"?"":"/");
+            foreach( $this->ary as $img )
+                $img->resetRoot($newPathToRootDir);
+        }
+
+
+
+        public function getAdminTemplateHref()
+        {
+            return $this->rootPath.$this->storeDir."includes/sliderAdmin.tpl";
+        }
+
+
+
+
+        public function getFormSubmitHref()
+        {
+            return $this->rootPath.$this->storeDir."saveScroller.php";
+        }
+
+
+
+        public function getImageById($id)
+        {
+            $id = mysql_real_escape_string($id, $this->dbCon);
+            return $this->ary[$id];
+        }
+
+
+
+// ********** Collection Management Functions **************
+
+        public function add(bseSliderImage &$img)
+        {
+            $this->ary[$img->id] = $img;
+        }
+
+
+        public function setDbConn($conn)
+        {
+            $this->dbCon = $conn;
+            foreach($this->ary as $value)
+                $value->setDbConn($conn);
+        }
+
+        public function dbAlive()
+        {
+            if( $this->dbCon == 0 )
+                return false;
+            
+            return mysql_ping($this->dbCon);
+        }
+        
+        public function refreshInfo()
+        {
+            foreach( $this->ary as $theItem )
+                $theItem->refresh();
+        }
+
+        public function delete($id)
+        {
+            if( isset($id) )
+            {
+                $this->ary[$id]->delete();
+                unset($this->ary[$id]);
+            }
+        }
+
+
+
+
+// ***** Iteration functions ********* //
+
+        public function rewind() 
+        {
+            reset($this->ary);
+        }
+
+        public function current() 
+        {
+            $var = current($this->ary);
+            return $var;
+        }
+
+        public function key() 
+        {
+            $var = key($this->ary);
+            return $var;
+        }
+
+        public function next() 
+        {
+            $var = next($this->ary);
+            return $var;
+        }
+
+        public function valid() 
+        {
+            $var = $this->current() !== false;
+            return $var;
+        }
+        
+        public function count()
+        {
+            return count($this->ary);
+        }
+
+
+}
+?>

@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS `bseVideos`;
+CREATE TABLE  `bseVideos` ( `id` int(2) unsigned NOT NULL auto_increment, `title` varchar(75) NOT NULL default '', `videoFile` varchar(150) NOT NULL default '', `previewFile` varchar(150) NOT NULL default '', `playerWidth` float NOT NULL default '0', `playerHeight` float NOT NULL default '0', `bgColor` char(6) NOT NULL default '000000', `originalFile` varchar(150) default NULL, `active` tinyint(1) NOT NULL default '0', PRIMARY KEY  (`id`)) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+DROP TABLE IF EXISTS `videos`;
+CREATE TABLE  `videos` (`id` int(2) unsigned NOT NULL auto_increment,`videoID` int(2) unsigned NOT NULL default '0',`title` varchar(200) NOT NULL default '',`description` text NOT NULL, PRIMARY KEY  (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

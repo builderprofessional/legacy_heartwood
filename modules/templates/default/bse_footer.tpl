@@ -1,0 +1,1 @@
+<a class="footerLinks" target="new" href="http://www.bsewebsites.com"><span class="footerLinks">BSE Websites</span></a> <?= $this->spacer ?> &copy;<?=date('Y')?> <a class="footerLinks" target="new" href="http://www.builders-software.com"><span class="footerLinks">TeamBSE</span></a>

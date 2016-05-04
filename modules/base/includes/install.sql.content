@@ -1,0 +1,10 @@
+CREATE TABLE  `bseContentData` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `page` varchar(45) NOT NULL DEFAULT '',
+  `code` text,
+  `title` varchar(75) DEFAULT NULL,
+  `javascript` text,
+  `metaDesc` text,
+  `metaKeywords` text,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

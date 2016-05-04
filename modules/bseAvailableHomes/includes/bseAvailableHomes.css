@@ -1,0 +1,271 @@
+.detailsContainer
+{
+    margin-top:10px;
+    margin-bottom:0px;
+}
+
+.address
+{
+    color:#FFFFFF;
+    font-size:14px;
+    font-weight:900;
+}
+
+.price
+{
+    color:#EEDD33;
+    font-size:12px;
+    font-weight:900;
+}
+
+.status
+{
+    color:#FFFFFF;
+    font-size:13px;
+    font-weight:900;
+    margin-top:4px;
+}
+
+.community
+{
+    font-size:12px;
+    color:#FFFFFF;
+    font-weight:900;
+}
+
+.homeDescription
+{
+    color#FFFFFF;
+    font-size:11px;
+    font-weight:400;
+}
+
+.detailsLink
+{
+    color:#000055;
+    font-size:12px;
+    font-weight:900;
+    text-align:center;
+    background-image:url('../images/toolbar.png');
+}
+
+.availableHeader
+{
+    color:#FFFFFF;
+    font-size:18px;
+    font-weight:700;
+    font-family:Arial, Verdana, Sans;
+}
+
+.availableSubheader
+{
+    color:#FFFFFF;
+    font-size:12px;
+    font-weight:600;
+    font-family:Arial, Verdana, Sans;
+}
+
+.homeSortLink
+{
+    color:#FFFFFF;
+    font-size:11px;
+    font-weight:600;
+    font-family:Arial, Verdana, Sans;
+    margin:0;
+}
+
+.homeDetailCell
+{
+    width:65%;
+    height:170px;
+    padding:9px;
+    border:2px solid #555555;
+    vertical-align:top;
+}
+
+.homeDetailMain
+{
+    width:100%;
+    height:100%;
+    color:#FFFFFF;
+    padding-top:2px;
+}
+
+.communityDetail
+{
+    font-size:12px;
+    color:#FFFFFF;
+    font-weight:900;
+    margin-left:7px;
+}
+
+.addressDetail
+{
+    margin-left:7px;
+    font-size:15px;
+    font-weight:900;
+}
+
+.citystateDetail
+{
+    margin-left:7px;
+    font-size:14px;
+}
+
+.priceDetail
+{
+    margin-left:7px;
+    margin-top:7px;
+    color:#EEDD33;
+    font-size:14px;
+    font-weight:700;
+}
+
+.statusDetail
+{
+    margin-left:7px;
+    font-size:14px;
+    font-weight:900;
+}
+
+.detailsContainerDetail
+{
+    margin-left:7px;
+    font-size:12px;
+}
+
+.photogalLinkDetail
+{
+    margin-top:7px;
+    margin-left:7px;
+    color:#3333EE;
+    font-size:14px;
+}
+
+.emailIcon
+{
+    background-image:url("../images/mailicon.png");
+    background-repeat:no-repeat;
+    background-position:center;
+    float:left;
+    width:25px;
+    height:18px;
+    margin-right:15px;
+}
+
+.printIcon
+{
+    background-image:url("../images/printicon.png");
+    background-repeat:no-repeat;
+    background-position:center;
+    float:left;
+    width:25px;
+    height:18px;
+    margin-right:15px;
+}
+
+.viewIcon
+{
+    background-image:url("../images/viewicon.png");
+    background-repeat:no-repeat;
+    background-position:center;
+    float:left;
+    width:25px;
+    height:18px;
+    margin-right:15px;
+}
+
+.calcIcon
+{
+    background-image:url("../images/calcicon.png");
+    background-repeat:no-repeat;
+    background-position:center;
+    float:left;
+    width:25px;
+    height:18px;
+    margin-right:15px;
+}
+
+.contactButtonDetails
+{
+    background-image:url("../images/toolbar.png");
+    width:80%;
+    height:15px;
+    color:#000055;
+    font-size:12px;
+    font-weight:900;
+    text-align:center;
+    margin-left:auto;
+    margin-right:auto;
+    padding-top:2px;
+}
+
+.contactPersonDetails
+{
+    font-size:14px;
+    font-weight:900;
+    margin-left:3px;
+    margin-top:3px;
+}
+
+.contactPhoneDetails
+{
+    font-size:12px;
+    margin-left:3px;
+}
+
+.contactEmailDetails
+{
+    font-size:12px;
+    margin-left:3px;
+}
+
+.toolsTextDetails
+{
+    color:#DDCC33;
+    font-size:13px;
+    font-weight:500;
+    clear:both;
+    margin-top:10px;
+    margin-left:20px;
+}
+
+.pageNumDetail
+{
+    font-size:12px;
+    font-weight:600;
+    height:20px;
+    width:100%;
+    margin-top:5px;
+}
+
+.selectedPageNum
+{
+    width:23px;
+    height:18px;
+    background-color:#444444;
+    color:##FFFFFF;
+    float:left;
+    text-align:center;
+    padding-top:2px;
+}
+
+.normPageNum
+{
+    width:23px;
+    height:18px;
+    cursor:pointer;
+    float:left;
+    text-align:center;
+    padding-top:2px;
+}
+
+.detailGalleryImage
+{
+    float:left;
+    width:150px;
+    height:100px;
+    text-align:left;
+    margin:8px;
+    overflow:hidden;
+}

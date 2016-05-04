@@ -1,0 +1,1 @@
+[21-Sep-2015 22:17:00 UTC] PHP Warning:  error_log(/var/log/php/error.log): failed to open stream: No such file or directory in /home/heartwood/public_html/modules/includes/js/tinybrowser/fns_tinybrowser.php on line 429

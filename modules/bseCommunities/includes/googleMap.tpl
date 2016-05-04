@@ -1,0 +1,1 @@
+<div id="map" class="commMapDisplay" style="<?=($this->overrideDefaultLayout ? "width:{$this->googleMap->width}px; height:{$this->googleMap->height}px; " : "width:450px; height:420px" )?>"></div>

@@ -1,0 +1,99 @@
+form 
+{
+    margin: 0;
+    padding: 0;
+}
+#search 
+{
+    margin: 5px;
+    padding: 0;
+    font-size: small;
+}
+#results 
+{
+    margin: 0;
+    padding: 0;
+    font-size: small;
+}
+#searchwell .unselected 
+{
+    padding-left: 18px;
+    padding-top: 1px;
+    background-image: url("http://labs.google.com/ridefinder/images/mm_20_yellow.png");
+    background-repeat: no-repeat;
+    background-position: top left;
+}
+.unselected .gs-watermark 
+{
+    display: none;
+}
+#searchwell .select 
+{
+    margin-bottom: 1em;
+}
+.unselected .select 
+{
+    cursor: pointer;
+    text-decoration: underline;
+    color: #7777cc;
+}
+#selected 
+{
+    margin-top: 1em;
+}
+#selected .gs-result 
+{
+    margin-bottom: 1em;
+}
+#selected .gs-result 
+{
+    padding-left: 30px;
+    padding-top: 3px;
+    background-image: url("http://www.google.com/mapfiles/icon.png");
+    background-repeat: no-repeat;
+    background-position: top left;
+}
+.commMapLink
+{
+    width:100%;
+    background-color:#211;
+}
+.commMapLink a
+{
+    color:#FFF;
+    font-weight:900;
+}
+.commMapDisplay
+{
+    width:100%;
+    height:470px;
+}
+.infoWindow
+{
+    color:#000;
+    width:auto;
+    padding:10px;
+}
+
+.infoWindowLink
+{
+    color:#000;
+}
+
+.communityMarkerName
+{
+    margin-top:10px;
+    padding:0;
+    font-size:17px;
+}
+
+.communitiesList
+{
+    height:520px;
+    overflow-y:auto;
+}
+.DetailPanelCommunityDescription
+{
+    padding:12px;
+    float:left;
+}
