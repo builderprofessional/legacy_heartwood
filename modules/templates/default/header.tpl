@@ -60,7 +60,7 @@ BRO;
 
 if( $this->moduleInstalled( "bseBuildProcessItem" ) )
     echo <<< PROC
-    <a href="{$this->rootDir}process/">Build Process</a><br />
+    <a href="{$this->rootDir}homeplans/">Home Plans</a><br />
 PROC;
 
 if( $this->moduleInstalled( "bseRemodelingGalleryImage" ) )

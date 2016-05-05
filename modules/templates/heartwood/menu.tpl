@@ -199,7 +199,7 @@
 			<img src="<?php echo $this->rootDir; ?>images/swoosh.png" style="position:relative; top:-7px; " />
 			<div class="nav_item nav_margin"><a href="<?php echo $this->rootDir; ?>testimonials/"><span style="font-size:19px; ">TESTIMONIALS</span></a></div>
 			<img src="<?php echo $this->rootDir; ?>images/swoosh.png" style="position:relative; top:-7px; " />
-			<div class="nav_item nav_margin"><a href="<?php echo $this->rootDir; ?>process/"><span style="font-size:19px; ">BUILD PROCESS</span></a></div>
+			<div class="nav_item nav_margin"><a target="_blank" href="<?php echo $this->rootDir; ?>homeplans/"><span style="font-size:19px; ">HOME PLANS</span></a></div>
 			<img src="<?php echo $this->rootDir; ?>images/swoosh.png" style="position:relative; top:-7px; " />
 			<div class="nav_item nav_margin"><a href="<?php echo $this->rootDir; ?>contact/"><span style="font-size:19px; ">CONTACT US</span></a></div>
             
